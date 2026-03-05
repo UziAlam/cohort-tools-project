@@ -2,24 +2,23 @@
 
 const express = require("express");
 const mongoose = require("mongoose");
+
 // Conexión a MongoDB
-mongoose.connect("mongodb://localhost:27017/cohort-tools-api", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-  .then(() => console.log("Conectado a MongoDB"))
-  .catch((err) => console.error("Error al conectar a MongoDB:", err));
-//
+mongoose.connect("mongodb://localhost:27017/cohort-tools-api")
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => console.error("Error connecting to MongoDB:", err));
+
 const cors = require("cors");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const path = require("path");
-const cohorts = require("./cohorts.json");
+
 const PORT = 5005;
-const students = require("./students.json");
 
 // const cohorts = require("./cohorts.json"); // day 2 update
 // const students = require("./students.json"); // day 2 update
+
+
 // MONGOOSE MODELS
 const cohortSchema = new mongoose.Schema({
   name: String,
@@ -61,6 +60,7 @@ app.use(cookieParser());
 
 // ROUTES - https://expressjs.com/en/starter/basic-routing.html
 // Devs Team - Start working on the routes here:
+
 // GET /docs - Serves API documentation HTML
 app.get("/docs", (req, res) => {
   res.sendFile(__dirname + "/views/docs.html");
@@ -76,6 +76,50 @@ app.get("/api/cohorts", async (req, res) => {
   }
 });
 
+// POST /api/cohorts - Creates a new cohort
+app.post("/api/cohorts", async (req, res) => {
+  try {
+    const createdCohort = await Cohort.create(req.body);
+    res.status(201).json(createdCohort);
+  } catch (err) {
+    res.status(400).json({ error: "Error creating cohort" });
+  }
+});
+
+// GET /api/cohorts/:cohortId - Returns a specific cohort by id
+app.get("/api/cohorts/:cohortId", async (req, res) => {
+  try {
+    const cohort = await Cohort.findById(req.params.cohortId);
+    res.json(cohort);
+  } catch (err) {
+    res.status(500).json({ error: "Error fetching cohort" });
+  }
+});
+
+// PUT /api/cohorts/:cohortId - Updates a specific cohort by id
+app.put("/api/cohorts/:cohortId", async (req, res) => {
+  try {
+    const updatedCohort = await Cohort.findByIdAndUpdate(
+      req.params.cohortId,
+      req.body,
+      { new: true }
+    );
+    res.json(updatedCohort);
+  } catch (err) {
+    res.status(400).json({ error: "Error updating cohort" });
+  }
+});
+
+// DELETE /api/cohorts/:cohortId - Deletes a specific cohort by id
+app.delete("/api/cohorts/:cohortId", async (req, res) => {
+  try {
+    await Cohort.findByIdAndDelete(req.params.cohortId);
+    res.json({ message: "Cohort deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: "Error deleting cohort" });
+  }
+});
+
 // GET /api/students - Returns all students from MongoDB
 app.get("/api/students", async (req, res) => {
   try {
@@ -85,21 +129,27 @@ app.get("/api/students", async (req, res) => {
     res.status(500).json({ error: "Error fetching students" });
   }
 });
-app.get("/docs", (req, res) => {
-  res.sendFile(__dirname + "/views/docs.html");
+
+// POST /api/students - Creates a new student
+app.post("/api/students", async (req, res) => {
+  try {
+    const createdStudent = await Student.create(req.body);
+    res.status(201).json(createdStudent);
+  } catch (err) {
+    res.status(400).json({ error: "Error creating student" });
+  }
 });
 
-app.get("/api/cohorts", (req, res) => {
-  res.json(cohorts);
+// GET /api/students/:studentId - Returns a specific student by id
+app.get("/api/students/:studentId", async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.studentId);
+    res.json(student);
+  } catch (err) {
+    res.status(500).json({ error: "Error fetching student" });
+  }
 });
 
-app.get("/api/students", (req, res) => {
-  res.json(students);
-});
-
-app.post("/api/cohorts", (req, req) => {
-  res.json(cohorts);
-})
 
 // START SERVER
 app.listen(PORT, () => {
