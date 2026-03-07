@@ -14,11 +14,12 @@ const app = express();
 
 // MONGOOSE CONNECTION
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/cohort-tools-api";
-mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(MONGODB_URI)
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
 // MODELS
+const User = require("./models/User");
 const Cohort = require("./models/Cohort");
 const Student = require("./models/Student");
 // MIDDLEWARE
@@ -33,6 +34,23 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
 // ROUTES
+const jwtMiddleware = require('./middleware/jwt.middleware');
+
+// Protected User Route
+app.get('/api/users/:id', jwtMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.status(200).json({ _id: user._id, email: user.email, name: user.name });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch user' });
+  }
+});
+// AUTH ROUTES
+const authRoutes = require('./routes/auth.routes');
+app.use('/auth', authRoutes);
 
 // GET /docs - Serves API documentation HTML
 app.get("/docs", (req, res) => {
