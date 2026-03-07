@@ -171,7 +171,10 @@ app.delete("/api/students/:studentId", async (req, res) => {
 // ERROR HANDLING MIDDLEWARE
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).json({ error: "Internal server error" });
+  // If error has a status, use it; otherwise default to 500
+  const status = err.status || 500;
+  const message = err.message || "Internal server error";
+  res.status(status).json({ error: message });
 });
 
 // START SERVER
