@@ -4,6 +4,7 @@ const express = require("express");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const path = require("path");
+const mongoose = require("mongoose");
 
 const cohorts = require("./cohorts.json");
 const students = require("./students.json");
@@ -11,6 +12,15 @@ const students = require("./students.json");
 // INITIALIZE EXPRESS APP
 const app = express();
 
+// MONGOOSE CONNECTION
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/cohort-tools-api";
+mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => console.error("MongoDB connection error:", err));
+
+// MODELS
+const Cohort = require("./models/Cohort");
+const Student = require("./models/Student");
 // MIDDLEWARE
 // Research Team - Set up CORS middleware here (later):
 const cors = require("cors");
