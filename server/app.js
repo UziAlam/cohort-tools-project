@@ -40,135 +40,132 @@ app.get("/docs", (req, res) => {
 });
 
 // GET /api/cohorts
-app.get("/api/cohorts", (req, res) => {
-  res.status(200).json(cohorts);
+app.get("/api/cohorts", async (req, res) => {
+  try {
+    const allCohorts = await Cohort.find();
+    res.status(200).json(allCohorts);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch cohorts" });
+  }
 });
 
 // GET /api/cohorts/:cohortId
-app.get("/api/cohorts/:cohortId", (req, res) => {
-  const cohortId = Number(req.params.cohortId);
-  const foundCohort = cohorts.find((cohort) => cohort._id === cohortId);
-
-  if (!foundCohort) {
-    return res.status(404).json({ error: "Cohort not found" });
+app.get("/api/cohorts/:cohortId", async (req, res) => {
+  try {
+    const cohort = await Cohort.findById(req.params.cohortId);
+    if (!cohort) {
+      return res.status(404).json({ error: "Cohort not found" });
+    }
+    res.status(200).json(cohort);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch cohort" });
   }
-
-  res.status(200).json(foundCohort);
 });
 
 // POST /api/cohorts
-app.post("/api/cohorts", (req, res) => {
-  const newCohort = req.body;
-
-  const createdCohort = {
-    _id: cohorts.length ? cohorts[cohorts.length - 1]._id + 1 : 1,
-    ...newCohort
-  };
-
-  cohorts.push(createdCohort);
-
-  res.status(201).json(createdCohort);
+app.post("/api/cohorts", async (req, res) => {
+  try {
+    const createdCohort = await Cohort.create(req.body);
+    res.status(201).json(createdCohort);
+  } catch (err) {
+    res.status(400).json({ error: "Failed to create cohort" });
+  }
 });
 
 // PUT /api/cohorts/:cohortId
-app.put("/api/cohorts/:cohortId", (req, res) => {
-  const cohortId = Number(req.params.cohortId);
-  const cohortIndex = cohorts.findIndex((cohort) => cohort._id === cohortId);
-
-  if (cohortIndex === -1) {
-    return res.status(404).json({ error: "Cohort not found" });
+app.put("/api/cohorts/:cohortId", async (req, res) => {
+  try {
+    const updatedCohort = await Cohort.findByIdAndUpdate(req.params.cohortId, req.body, { new: true });
+    if (!updatedCohort) {
+      return res.status(404).json({ error: "Cohort not found" });
+    }
+    res.status(200).json(updatedCohort);
+  } catch (err) {
+    res.status(400).json({ error: "Failed to update cohort" });
   }
-
-  cohorts[cohortIndex] = { ...cohorts[cohortIndex], ...req.body };
-
-  res.status(200).json(cohorts[cohortIndex]);
 });
 
 // DELETE /api/cohorts/:cohortId
-app.delete("/api/cohorts/:cohortId", (req, res) => {
-  const cohortId = Number(req.params.cohortId);
-  const cohortIndex = cohorts.findIndex((cohort) => cohort._id === cohortId);
-
-  if (cohortIndex === -1) {
-    return res.status(404).json({ error: "Cohort not found" });
+app.delete("/api/cohorts/:cohortId", async (req, res) => {
+  try {
+    const deletedCohort = await Cohort.findByIdAndDelete(req.params.cohortId);
+    if (!deletedCohort) {
+      return res.status(404).json({ error: "Cohort not found" });
+    }
+    res.status(200).json({ message: "Cohort deleted successfully", deletedCohort });
+  } catch (err) {
+    res.status(400).json({ error: "Failed to delete cohort" });
   }
-
-  const deletedCohort = cohorts.splice(cohortIndex, 1);
-
-  res.status(200).json({
-    message: "Cohort deleted successfully",
-    deletedCohort: deletedCohort[0]
-  });
 });
 
 // GET /api/students
-app.get("/api/students", (req, res) => {
-  res.status(200).json(students);
+app.get("/api/students", async (req, res) => {
+  try {
+    const allStudents = await Student.find().populate("cohort");
+    res.status(200).json(allStudents);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch students" });
+  }
 });
 
 // GET /api/students/:studentId
-app.get("/api/students/:studentId", (req, res) => {
-  const studentId = Number(req.params.studentId);
-  const foundStudent = students.find((student) => student._id === studentId);
-
-  if (!foundStudent) {
-    return res.status(404).json({ error: "Student not found" });
+app.get("/api/students/:studentId", async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.studentId).populate("cohort");
+    if (!student) {
+      return res.status(404).json({ error: "Student not found" });
+    }
+    res.status(200).json(student);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch student" });
   }
-
-  res.status(200).json(foundStudent);
 });
 
 // GET /api/students/cohort/:cohortId
-app.get("/api/students/cohort/:cohortId", (req, res) => {
-  const cohortId = Number(req.params.cohortId);
-  const cohortStudents = students.filter((student) => student.cohort === cohortId);
-
-  res.status(200).json(cohortStudents);
+app.get("/api/students/cohort/:cohortId", async (req, res) => {
+  try {
+    const cohortStudents = await Student.find({ cohort: req.params.cohortId }).populate("cohort");
+    res.status(200).json(cohortStudents);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch students for cohort" });
+  }
 });
 
 // POST /api/students
-app.post("/api/students", (req, res) => {
-  const newStudent = req.body;
-
-  const createdStudent = {
-    _id: students.length ? students[students.length - 1]._id + 1 : 1,
-    ...newStudent
-  };
-
-  students.push(createdStudent);
-
-  res.status(201).json(createdStudent);
+app.post("/api/students", async (req, res) => {
+  try {
+    const createdStudent = await Student.create(req.body);
+    const populatedStudent = await Student.findById(createdStudent._id).populate("cohort");
+    res.status(201).json(populatedStudent);
+  } catch (err) {
+    res.status(400).json({ error: "Failed to create student" });
+  }
 });
 
 // PUT /api/students/:studentId
-app.put("/api/students/:studentId", (req, res) => {
-  const studentId = Number(req.params.studentId);
-  const studentIndex = students.findIndex((student) => student._id === studentId);
-
-  if (studentIndex === -1) {
-    return res.status(404).json({ error: "Student not found" });
+app.put("/api/students/:studentId", async (req, res) => {
+  try {
+    const updatedStudent = await Student.findByIdAndUpdate(req.params.studentId, req.body, { new: true }).populate("cohort");
+    if (!updatedStudent) {
+      return res.status(404).json({ error: "Student not found" });
+    }
+    res.status(200).json(updatedStudent);
+  } catch (err) {
+    res.status(400).json({ error: "Failed to update student" });
   }
-
-  students[studentIndex] = { ...students[studentIndex], ...req.body };
-
-  res.status(200).json(students[studentIndex]);
 });
 
 // DELETE /api/students/:studentId
-app.delete("/api/students/:studentId", (req, res) => {
-  const studentId = Number(req.params.studentId);
-  const studentIndex = students.findIndex((student) => student._id === studentId);
-
-  if (studentIndex === -1) {
-    return res.status(404).json({ error: "Student not found" });
+app.delete("/api/students/:studentId", async (req, res) => {
+  try {
+    const deletedStudent = await Student.findByIdAndDelete(req.params.studentId).populate("cohort");
+    if (!deletedStudent) {
+      return res.status(404).json({ error: "Student not found" });
+    }
+    res.status(200).json({ message: "Student deleted successfully", deletedStudent });
+  } catch (err) {
+    res.status(400).json({ error: "Failed to delete student" });
   }
-
-  const deletedStudent = students.splice(studentIndex, 1);
-
-  res.status(200).json({
-    message: "Student deleted successfully",
-    deletedStudent: deletedStudent[0]
-  });
 });
 
 // ERROR HANDLING MIDDLEWARE
